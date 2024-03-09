@@ -1,6 +1,7 @@
-import { PropsWithChildren, useCallback, useState } from 'react'
+import { PropsWithChildren, useCallback, useRef, useState } from 'react'
 import { Circle } from 'react-konva'
 import { useWindowContext } from '../Window'
+import { useDocumentEventListener, useKeyDownEventListener } from '../../hooks/useDocumentEventListener'
 
 interface ShootersProps {
     
@@ -9,6 +10,13 @@ interface ShootersProps {
 interface ShooterCoordinates {
     x: number,
     y: number
+}
+
+enum MoveKey {
+    Left = 'ArrowLeft',
+    Right = 'ArrowRight',
+    Up = 'ArrowUp',
+    Down = 'ArrowDown'
 }
 
 export const Shooter = (props: PropsWithChildren<ShootersProps>) => {
@@ -30,6 +38,23 @@ export const Shooter = (props: PropsWithChildren<ShootersProps>) => {
         x: coords.x,
         y: type == 'up' ? coords.y - moveVelocity : coords.y + moveVelocity
     })), [coordinates, setCoordinates])
+
+    useDocumentEventListener('keydown', evt => {
+        switch (evt.key) {
+            case MoveKey.Up:
+                moveY('up')
+                break
+            case MoveKey.Down:
+                moveY('down')
+                break
+            case MoveKey.Left:
+                moveX('left')
+                break
+            case MoveKey.Right:
+                moveX('right')
+                break
+        }
+    })
 
     return (
         <Circle
