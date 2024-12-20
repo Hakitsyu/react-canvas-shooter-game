@@ -1,16 +1,7 @@
-import { PropsWithChildren, useCallback, useRef, useState } from 'react'
+import { PropsWithChildren, useCallback, useEffect, useRef, useState } from 'react'
 import { Circle } from 'react-konva'
 import { useWindowContext } from '../Window'
-import { useDocumentEventListener, useKeyDownEventListener } from '../../hooks/useDocumentEventListener'
-
-interface ShootersProps {
-    
-}
-
-interface ShooterCoordinates {
-    x: number,
-    y: number
-}
+import { useDocumentEventListener } from '../../hooks/useDocumentEventListener'
 
 enum MoveKey {
     Left = 'ArrowLeft',
@@ -19,25 +10,58 @@ enum MoveKey {
     Down = 'ArrowDown'
 }
 
-export const Shooter = (props: PropsWithChildren<ShootersProps>) => {
+type MoveHorizontalTypes = 'left' | 'right';
+
+type MoveVerticalTypes = 'up' | 'down';
+
+export const Shooter = () => {
     const windowContext = useWindowContext();
 
-    const [coordinates, setCoordinates] = useState<ShooterCoordinates>({
-        x: windowContext.width / 2,
-        y: windowContext.height / 2
-    });
+    const ref = useRef(null);
 
-    const moveVelocity = 10;
+    const moveVelocity = 35;
 
-    const moveX = useCallback((type: 'left' | 'right') => setCoordinates(coords => ({
-        x: type === 'left' ? coords.x - moveVelocity : coords.x + moveVelocity,
-        y: coords.y
-    })), [coordinates, setCoordinates])
+    const isMovingX = useRef(false);
+    const moveX = useCallback(
+        (type: MoveHorizontalTypes) => {
+            const currentRef = ref.current as any;
+            if (currentRef && !isMovingX.current) {
+                isMovingX.current = true;
 
-    const moveY = useCallback((type: 'up' | 'down') => setCoordinates(coords => ({
-        x: coords.x,
-        y: type == 'up' ? coords.y - moveVelocity : coords.y + moveVelocity
-    })), [coordinates, setCoordinates])
+                const newX = type === 'left'
+                    ? currentRef.x() - moveVelocity
+                    : currentRef.x() + moveVelocity;
+
+                currentRef.to({
+                    x: newX,
+                    duration: 0.1,
+                    onFinish: () => isMovingX.current = false
+                });
+            }
+        },
+        []
+    );
+
+    const isMovingY = useRef(false);
+    const moveY = useCallback(
+        (type: MoveVerticalTypes) => {
+            const currentRef = ref.current as any;
+            if (currentRef && !isMovingY.current) {
+                isMovingY.current = true;
+
+                const newY = type === 'up'
+                    ? currentRef.y() - moveVelocity
+                    : currentRef.y() + moveVelocity;
+
+                currentRef.to({
+                    y: newY,
+                    duration: 0.1,
+                    onFinish: () => isMovingY.current = false 
+                });
+            }
+        },
+        []
+    );
 
     useDocumentEventListener('keydown', evt => {
         switch (evt.key) {
@@ -58,10 +82,11 @@ export const Shooter = (props: PropsWithChildren<ShootersProps>) => {
 
     return (
         <Circle
+            ref={ref}
             width={50}
             height={50}
-            x={coordinates.x}
-            y={coordinates.y}
+            x={windowContext.width / 2}
+            y={windowContext.height / 2}
             radius={10}
             stroke='black'
             strokeWidth={1}
