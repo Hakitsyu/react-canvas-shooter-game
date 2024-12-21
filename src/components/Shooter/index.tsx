@@ -1,95 +1,68 @@
-import { PropsWithChildren, useCallback, useEffect, useRef, useState } from 'react'
-import { Circle } from 'react-konva'
-import { useWindowContext } from '../Window'
-import { useDocumentEventListener } from '../../hooks/useDocumentEventListener'
+import { useCallback, useEffect, useInsertionEffect, useRef, useState } from 'react';
+import { useWindowContext } from '../Window';
+import { Graphics } from '@pixi/react';
+import { Graphics as PixiGraphics } from '@pixi/graphics'
+import { useDocumentEventListener } from '../../hooks/useDocumentEventListener';
+import { useSpring, animated } from '@react-spring/web';
 
-enum MoveKey {
-    Left = 'ArrowLeft',
-    Right = 'ArrowRight',
-    Up = 'ArrowUp',
-    Down = 'ArrowDown'
-}
+type Moves = 'up' | 'down' | 'left' | 'right';
 
-type MoveHorizontalTypes = 'left' | 'right';
+const MovesKeys: {
+    [key: string]: Moves
+} = {
+    'ArrowLeft': 'left',
+    'ArrowRight': 'right',
+    'ArrowUp': 'up',
+    'ArrowDown': 'down'
+};
 
-type MoveVerticalTypes = 'up' | 'down';
+const AnimatedGraphics = animated(Graphics);
 
 export const Shooter = () => {
     const windowContext = useWindowContext();
 
-    const ref = useRef(null);
+    const draw = useCallback((graphics: PixiGraphics) => {
+        console.log(graphics.x, graphics.y)
+        graphics.clear();
+        graphics.lineStyle(1, 0x000000);
+        graphics.drawCircle(0, 0, 10);
+    }, []);
 
-    const moveVelocity = 35;
+    const moveXVelocity = 80;
+    const moveYVelocity = 40;
 
-    const isMovingX = useRef(false);
-    const moveX = useCallback(
-        (type: MoveHorizontalTypes) => {
-            const currentRef = ref.current as any;
-            if (currentRef && !isMovingX.current) {
-                isMovingX.current = true;
+    const [coords, api] = useSpring(() => ({
+        x: windowContext.width / 2,
+        y: windowContext.height / 2
+    }));
 
-                const newX = type === 'left'
-                    ? currentRef.x() - moveVelocity
-                    : currentRef.x() + moveVelocity;
+    const move = useCallback(
+        (move: Moves) => {
+            api.start((_, state) => {
+                const coords = state.get();
 
-                currentRef.to({
-                    x: newX,
-                    duration: 0.1,
-                    onFinish: () => isMovingX.current = false
-                });
-            }
+                const isHorizontalMove = move === 'left' || move === 'right';
+                if (isHorizontalMove) {
+                    const newX = coords.x + (moveXVelocity * (move === 'left' ? -1 : 1));
+
+                    return { x: newX };
+                }
+
+                const newY = coords.y + (moveYVelocity * (move === 'up' ? -1 : 1));
+            
+                return { y: newY };
+            });
         },
-        []
+        [api]
     );
 
-    const isMovingY = useRef(false);
-    const moveY = useCallback(
-        (type: MoveVerticalTypes) => {
-            const currentRef = ref.current as any;
-            if (currentRef && !isMovingY.current) {
-                isMovingY.current = true;
-
-                const newY = type === 'up'
-                    ? currentRef.y() - moveVelocity
-                    : currentRef.y() + moveVelocity;
-
-                currentRef.to({
-                    y: newY,
-                    duration: 0.1,
-                    onFinish: () => isMovingY.current = false 
-                });
-            }
-        },
-        []
-    );
-
-    useDocumentEventListener('keydown', evt => {
-        switch (evt.key) {
-            case MoveKey.Up:
-                moveY('up')
-                break
-            case MoveKey.Down:
-                moveY('down')
-                break
-            case MoveKey.Left:
-                moveX('left')
-                break
-            case MoveKey.Right:
-                moveX('right')
-                break
-        }
-    })
+    useDocumentEventListener('keydown', evt => move(MovesKeys[evt.key]));
 
     return (
-        <Circle
-            ref={ref}
-            width={50}
-            height={50}
-            x={windowContext.width / 2}
-            y={windowContext.height / 2}
-            radius={10}
-            stroke='black'
-            strokeWidth={1}
+        <AnimatedGraphics 
+            draw={draw} 
+            x={coords.x}
+            y={coords.y}
         />
     )
 }

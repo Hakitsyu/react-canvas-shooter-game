@@ -1,15 +1,26 @@
 import { PropsWithChildren, createContext, createRef, useContext, useRef } from 'react';
-import { Stage } from 'react-konva';
+import { Stage } from "@pixi/react"
 
 export const Window = (props: PropsWithChildren) => {
     const context = useWindowContext();
 
+    console.log(context.width, context.height)
+
     return (
-        <Stage 
+        <Stage
             width={context.width}
             height={context.height}
+            options={{
+                backgroundColor: 0xffffff,
+            }}
+            style={{
+                // width: '100%',
+                // height: '100%'
+            }}
         >
-            {props.children}
+            <WindowContext.Provider value={context}>
+                {props.children}
+            </WindowContext.Provider>
         </Stage>
     )
 }

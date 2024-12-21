@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pixi/react": "^7.1.2",
+    "@react-spring/web": "^9.7.5",
     "konva": "^9.3.6",
+    "pixi.js": "^7.4.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-konva": "^18.2.10"
